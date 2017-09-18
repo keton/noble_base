@@ -1,6 +1,5 @@
 import * as Noble from 'noble';
 import * as NobleBase from "../index";
-import * as Process from 'process';
 
 class SimplePeripheral extends NobleBase.Base {
 

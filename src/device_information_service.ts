@@ -34,29 +34,32 @@ export class DeviceInformationService {
         });
     }
 
-    public readModelNumber():Promise<string>{
+    public readModelNumber(): Promise<string> {
         return this.baseDevice.readStringCharacterisitc(DeviceInformationService.UUIDS.Service, DeviceInformationService.UUIDS.ModelNumber);
     }
 
-    public readSerialNumber():Promise<string>{
+    public readSerialNumber(): Promise<string> {
         return this.baseDevice.readStringCharacterisitc(DeviceInformationService.UUIDS.Service, DeviceInformationService.UUIDS.SerialNumber);
     }
 
-    public readFirmwareRevision():Promise<string>{
+    public readFirmwareRevision(): Promise<string> {
         return this.baseDevice.readStringCharacterisitc(DeviceInformationService.UUIDS.Service, DeviceInformationService.UUIDS.FirmwareRevision);
     }
 
-    public readHardwareRevision():Promise<string>{
+    public readHardwareRevision(): Promise<string> {
         return this.baseDevice.readStringCharacterisitc(DeviceInformationService.UUIDS.Service, DeviceInformationService.UUIDS.HardwareRevision);
     }
 
-    public readSoftwareRevision():Promise<string>{
+    public readSoftwareRevision(): Promise<string> {
         return this.baseDevice.readStringCharacterisitc(DeviceInformationService.UUIDS.Service, DeviceInformationService.UUIDS.SoftwareRevision);
     }
 
-    public readManufacturerName():Promise<string>{
+    public readManufacturerName(): Promise<string> {
         return this.baseDevice.readStringCharacterisitc(DeviceInformationService.UUIDS.Service, DeviceInformationService.UUIDS.SoftwareRevision);
     }
 
-
+    /** Returns true if Device Information service is present in underlying peripheral */
+    public present(): boolean {
+        return this.baseDevice.hasService(DeviceInformationService.UUIDS.Service);
+    }
 }

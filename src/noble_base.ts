@@ -8,11 +8,11 @@ export abstract class Base extends Events.EventEmitter {
     protected servicesMap: Map<string, Noble.Service>;
     protected characteristicMap: Map<string, Map<string, Noble.Characteristic>>;
 
-    private onConnect(error: string) {
+    private onBaseConnect(error: string) {
         this.emit('connect', error);
     }
 
-    private onDisconnect(error: string) {
+    private onBaseDisconnect(error: string) {
         this.characteristicMap = new Map<string, Map<string, Noble.Characteristic>>();
         this.servicesMap = new Map<string, Noble.Service>();
         this.emit('disconnect', error);
@@ -22,7 +22,7 @@ export abstract class Base extends Events.EventEmitter {
     protected abstract onConnectAndSetupDone(): void;
 
     /** Returns true if we should connect to this peripheral */
-    public abstract is(peripheral:Noble.Peripheral):boolean;
+    public abstract is(peripheral: Noble.Peripheral): boolean;
 
     constructor() {
         super();
@@ -35,16 +35,16 @@ export abstract class Base extends Events.EventEmitter {
     /** Add Noble peripheral instance for this device.
      *  This should be done before any other operations are performed, typically from generator class like ScanHelper instance. 
      * */
-    public attachPeripheral(peripheral:Noble.Peripheral) {
+    public attachPeripheral(peripheral: Noble.Peripheral) {
         this.peripheral = peripheral;
-        this.peripheral.once("connect", this.onConnect.bind(this));
-        this.peripheral.once("disconnect", this.onDisconnect.bind(this));
+        this.peripheral.once("connect", this.onBaseConnect.bind(this));
+        this.peripheral.once("disconnect", this.onBaseDisconnect.bind(this));
     }
 
     /** Connect to this device */
     public connect(): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            if(!this.peripheral) {
+            if (!this.peripheral) {
                 reject("Peripheral not attached!");
                 return;
             }
@@ -58,7 +58,7 @@ export abstract class Base extends Events.EventEmitter {
     /** Perform BLE device disconnect */
     public disconnect(): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            if(!this.peripheral) {
+            if (!this.peripheral) {
                 reject("Peripheral not attached!");
                 return;
             }
@@ -71,7 +71,7 @@ export abstract class Base extends Events.EventEmitter {
     /** Enumerate GATT tree of underlying BLE peripheral */
     protected discoverServicesAndCharacteristics(): Promise<Noble.Service[]> {
         return new Promise<Noble.Service[]>((resolve, reject) => {
-            if(!this.peripheral) {
+            if (!this.peripheral) {
                 reject("Peripheral not attached!");
                 return;
             }
@@ -89,9 +89,9 @@ export abstract class Base extends Events.EventEmitter {
 
         for (let service of services) {
             this.servicesMap.set(service.uuid, service);
-            
+
             let charMap: Map<string, Noble.Characteristic> = new Map();
-            
+
             for (let characteristic of service.characteristics) {
                 charMap.set(characteristic.uuid, characteristic);
             }
@@ -113,38 +113,37 @@ export abstract class Base extends Events.EventEmitter {
     }
 
     /** Returns true if connected BLE device has service with specified UUID */
-    public hasService(serviceUUID:string):boolean {
+    public hasService(serviceUUID: string): boolean {
         return this.servicesMap.has(serviceUUID);
     }
 
     /** Returns true if connected BLE device has characteristic with specified UUID */
-    public hasCharacteristic(serviceUUID:string, characteristicUUID:string):boolean {
-        if(!this.characteristicMap.has(serviceUUID) || !this.hasService(serviceUUID)) return false;
+    public hasCharacteristic(serviceUUID: string, characteristicUUID: string): boolean {
+        if (!this.characteristicMap.has(serviceUUID) || !this.hasService(serviceUUID)) return false;
 
-        const serviceMap=this.characteristicMap.get(serviceUUID);
-        if(!serviceMap) return false;
+        const serviceMap = this.characteristicMap.get(serviceUUID);
+        if (!serviceMap) return false;
         return serviceMap.has(characteristicUUID);
     }
 
-    protected getCharacteristic(serviceUUID:string, characteristicUUID:string):Noble.Characteristic | undefined {
-        if(!this.hasService(serviceUUID))
-        {
+    protected getCharacteristic(serviceUUID: string, characteristicUUID: string): Noble.Characteristic | undefined {
+        if (!this.hasService(serviceUUID)) {
             console.error("service %s not found!", serviceUUID);
             return undefined;
         }
-        if(!this.hasCharacteristic(serviceUUID, characteristicUUID)) {
+        if (!this.hasCharacteristic(serviceUUID, characteristicUUID)) {
             console.error("service %s doesn't have characteristic %s", serviceUUID, characteristicUUID);
             return undefined;
         }
 
-        const serviceMap=this.characteristicMap.get(serviceUUID);
-        if(!serviceMap) {
+        const serviceMap = this.characteristicMap.get(serviceUUID);
+        if (!serviceMap) {
             console.error("characteristicMap doesn't have service %s!", serviceUUID);
             return undefined;
         }
 
-        const characteristic=serviceMap.get(characteristicUUID);
-        if(!characteristic) {
+        const characteristic = serviceMap.get(characteristicUUID);
+        if (!characteristic) {
             console.error("serviceMap %s doesn't have characteristic %s!", serviceUUID, characteristicUUID);
             return undefined;
         }
@@ -152,54 +151,54 @@ export abstract class Base extends Events.EventEmitter {
     }
 
     /** Read characteristic data as Buffer */
-    public readDataCharacterisitc(serviceUUID:string, characteristicUUID:string):Promise<Buffer> {
-        return new Promise<Buffer>((resolve, reject)=>{
+    public readDataCharacterisitc(serviceUUID: string, characteristicUUID: string): Promise<Buffer> {
+        return new Promise<Buffer>((resolve, reject) => {
 
-            const characteristic=this.getCharacteristic(serviceUUID, characteristicUUID);
-            if(!characteristic) {
-                reject("serviceMap "+serviceUUID+" doesn't have characteristic "+characteristicUUID+"!");
+            const characteristic = this.getCharacteristic(serviceUUID, characteristicUUID);
+            if (!characteristic) {
+                reject("serviceMap " + serviceUUID + " doesn't have characteristic " + characteristicUUID + "!");
                 return;
             }
 
-            characteristic.read((error:string, data:Buffer)=>{
-                if(error) reject(error);
+            characteristic.read((error: string, data: Buffer) => {
+                if (error) reject(error);
                 else resolve(data);
             });
         });
     }
 
     /** Write Buffer to characteristic */
-    public writeDataCharacterisitc(serviceUUID:string, characteristicUUID:string, data:Buffer):Promise<void> {
-        return new Promise<void>((resolve, reject)=>{
+    public writeDataCharacterisitc(serviceUUID: string, characteristicUUID: string, data: Buffer): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
 
-            const characteristic=this.getCharacteristic(serviceUUID, characteristicUUID);
-            if(!characteristic) {
-                reject("serviceMap "+serviceUUID+" doesn't have characteristic "+characteristicUUID+"!");
+            const characteristic = this.getCharacteristic(serviceUUID, characteristicUUID);
+            if (!characteristic) {
+                reject("serviceMap " + serviceUUID + " doesn't have characteristic " + characteristicUUID + "!");
                 return;
             }
 
             var withoutResponse = (characteristic.properties.indexOf('writeWithoutResponse') !== -1) &&
-            (characteristic.properties.indexOf('write') === -1);
+                (characteristic.properties.indexOf('write') === -1);
 
-            characteristic.write(data, withoutResponse, (error:string)=>{
-                if(error) reject(error);
+            characteristic.write(data, withoutResponse, (error: string) => {
+                if (error) reject(error);
                 else resolve();
             });
         });
     }
 
     /** Enable characterisitc notification and attach listener */
-    public subscribeCharacteristic(serviceUUID:string, characteristicUUID:string, listener:(data:Buffer) => void):Promise<void> {
-        return new Promise<void>((resolve, reject)=>{
-            
-            const characteristic=this.getCharacteristic(serviceUUID, characteristicUUID);
-            if(!characteristic) {
-                reject("serviceMap "+serviceUUID+" doesn't have characteristic "+characteristicUUID+"!");
+    public subscribeCharacteristic(serviceUUID: string, characteristicUUID: string, listener: (data: Buffer) => void): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+
+            const characteristic = this.getCharacteristic(serviceUUID, characteristicUUID);
+            if (!characteristic) {
+                reject("serviceMap " + serviceUUID + " doesn't have characteristic " + characteristicUUID + "!");
                 return;
             }
 
-            characteristic.subscribe((error:string)=>{
-                if(error) {
+            characteristic.subscribe((error: string) => {
+                if (error) {
                     reject(error);
                     return;
                 }
@@ -210,17 +209,17 @@ export abstract class Base extends Events.EventEmitter {
     }
 
     /** Disable characterisitc notification and detach listener */
-    public unsubscribeCharacteristic(serviceUUID:string, characteristicUUID:string, listener:(data:Buffer) => void):Promise<void> {
-        return new Promise<void>((resolve, reject)=>{
-            
-            const characteristic=this.getCharacteristic(serviceUUID, characteristicUUID);
-            if(!characteristic) {
-                reject("serviceMap "+serviceUUID+" doesn't have characteristic "+characteristicUUID+"!");
+    public unsubscribeCharacteristic(serviceUUID: string, characteristicUUID: string, listener: (data: Buffer) => void): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+
+            const characteristic = this.getCharacteristic(serviceUUID, characteristicUUID);
+            if (!characteristic) {
+                reject("serviceMap " + serviceUUID + " doesn't have characteristic " + characteristicUUID + "!");
                 return;
             }
 
-            characteristic.unsubscribe((error:string)=>{
-                if(error) {
+            characteristic.unsubscribe((error: string) => {
+                if (error) {
                     reject(error);
                     return;
                 }
@@ -230,11 +229,10 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    /** Read characteristic data as string */
-    public readStringCharacterisitc(serviceUUID:string, characteristicUUID:string):Promise<string> {
-        return new Promise<string>(async (resolve, reject)=>{
+    public readStringCharacterisitc(serviceUUID: string, characteristicUUID: string): Promise<string> {
+        return new Promise<string>(async (resolve, reject) => {
             try {
-                const data:Buffer=await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
+                const data: Buffer = await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
                 resolve(data.toString());
             }
             catch (error) {
@@ -243,11 +241,10 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    /** Read characteristic data as UInt8 */
-    public readUInt8Characterisitc(serviceUUID:string, characteristicUUID:string):Promise<number> {
-        return new Promise<number>(async (resolve, reject)=>{
+    public readUInt8Characterisitc(serviceUUID: string, characteristicUUID: string): Promise<number> {
+        return new Promise<number>(async (resolve, reject) => {
             try {
-                const data:Buffer=await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
+                const data: Buffer = await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
                 resolve(data.readUInt8(0));
             }
             catch (error) {
@@ -256,11 +253,10 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    /** Read characteristic data as Int8 */
-    public readInt8Characterisitc(serviceUUID:string, characteristicUUID:string):Promise<number> {
-        return new Promise<number>(async (resolve, reject)=>{
+    public readInt8Characterisitc(serviceUUID: string, characteristicUUID: string): Promise<number> {
+        return new Promise<number>(async (resolve, reject) => {
             try {
-                const data:Buffer=await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
+                const data: Buffer = await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
                 resolve(data.readInt8(0));
             }
             catch (error) {
@@ -269,11 +265,10 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    /** Read characteristic data as UInt16 Little Endian */
-    public readUInt16LECharacterisitc(serviceUUID:string, characteristicUUID:string):Promise<number> {
-        return new Promise<number>(async (resolve, reject)=>{
+    public readUInt16LECharacterisitc(serviceUUID: string, characteristicUUID: string): Promise<number> {
+        return new Promise<number>(async (resolve, reject) => {
             try {
-                const data:Buffer=await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
+                const data: Buffer = await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
                 resolve(data.readUInt16LE(0));
             }
             catch (error) {
@@ -282,11 +277,10 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    /** Read characteristic data as UInt16 Big Endian */
-    public readUInt16BECharacterisitc(serviceUUID:string, characteristicUUID:string):Promise<number> {
-        return new Promise<number>(async (resolve, reject)=>{
+    public readUInt16BECharacterisitc(serviceUUID: string, characteristicUUID: string): Promise<number> {
+        return new Promise<number>(async (resolve, reject) => {
             try {
-                const data:Buffer=await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
+                const data: Buffer = await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
                 resolve(data.readUInt16BE(0));
             }
             catch (error) {
@@ -295,11 +289,10 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    /** Read characteristic data as UInt32 Little Endian */
-    public readUInt32LECharacterisitc(serviceUUID:string, characteristicUUID:string):Promise<number> {
-        return new Promise<number>(async (resolve, reject)=>{
+    public readUInt32LECharacterisitc(serviceUUID: string, characteristicUUID: string): Promise<number> {
+        return new Promise<number>(async (resolve, reject) => {
             try {
-                const data:Buffer=await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
+                const data: Buffer = await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
                 resolve(data.readUInt32LE(0));
             }
             catch (error) {
@@ -308,11 +301,10 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    /** Read characteristic data as UInt32 Big Endian */
-    public readUInt32BECharacterisitc(serviceUUID:string, characteristicUUID:string):Promise<number> {
-        return new Promise<number>(async (resolve, reject)=>{
+    public readUInt32BECharacterisitc(serviceUUID: string, characteristicUUID: string): Promise<number> {
+        return new Promise<number>(async (resolve, reject) => {
             try {
-                const data:Buffer=await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
+                const data: Buffer = await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
                 resolve(data.readUInt32BE(0));
             }
             catch (error) {
@@ -321,10 +313,60 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    public readFloatLECharacterisitc(serviceUUID:string, characteristicUUID:string):Promise<number> {
-        return new Promise<number>(async (resolve, reject)=>{
+    public readInt16LECharacterisitc(serviceUUID: string, characteristicUUID: string): Promise<number> {
+        return new Promise<number>(async (resolve, reject) => {
             try {
-                const data:Buffer=await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
+                const data: Buffer = await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
+                resolve(data.readInt16LE(0));
+            }
+            catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    public readInt16BECharacterisitc(serviceUUID: string, characteristicUUID: string): Promise<number> {
+        return new Promise<number>(async (resolve, reject) => {
+            try {
+                const data: Buffer = await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
+                resolve(data.readInt16BE(0));
+            }
+            catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    /** Read characteristic data as UInt32 Little Endian */
+    public readInt32LECharacterisitc(serviceUUID: string, characteristicUUID: string): Promise<number> {
+        return new Promise<number>(async (resolve, reject) => {
+            try {
+                const data: Buffer = await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
+                resolve(data.readInt32LE(0));
+            }
+            catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    /** Read characteristic data as UInt32 Big Endian */
+    public readInt32BECharacterisitc(serviceUUID: string, characteristicUUID: string): Promise<number> {
+        return new Promise<number>(async (resolve, reject) => {
+            try {
+                const data: Buffer = await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
+                resolve(data.readInt32BE(0));
+            }
+            catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    public readFloatLECharacterisitc(serviceUUID: string, characteristicUUID: string): Promise<number> {
+        return new Promise<number>(async (resolve, reject) => {
+            try {
+                const data: Buffer = await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
                 resolve(data.readFloatLE(0));
             }
             catch (error) {
@@ -333,10 +375,10 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    public readFloatBECharacterisitc(serviceUUID:string, characteristicUUID:string):Promise<number> {
-        return new Promise<number>(async (resolve, reject)=>{
+    public readFloatBECharacterisitc(serviceUUID: string, characteristicUUID: string): Promise<number> {
+        return new Promise<number>(async (resolve, reject) => {
             try {
-                const data:Buffer=await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
+                const data: Buffer = await this.readDataCharacterisitc(serviceUUID, characteristicUUID);
                 resolve(data.readFloatBE(0));
             }
             catch (error) {
@@ -345,8 +387,8 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    public writeStringCharacterisitc(serviceUUID:string, characteristicUUID:string, data:string):Promise<void> {
-        return new Promise<void>(async (resolve, reject)=>{
+    public writeStringCharacterisitc(serviceUUID: string, characteristicUUID: string, data: string): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
             try {
                 await this.writeDataCharacterisitc(serviceUUID, characteristicUUID, new Buffer(data));
                 resolve();
@@ -357,11 +399,11 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    public writeUInt8Characterisitc(serviceUUID:string, characteristicUUID:string, data:number):Promise<void> {
-        return new Promise<void>(async (resolve, reject)=>{
+    public writeUInt8Characterisitc(serviceUUID: string, characteristicUUID: string, data: number): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
             try {
-                let buffer=new Buffer(1);
-                buffer.writeUInt8(data,0);
+                let buffer = new Buffer(1);
+                buffer.writeUInt8(data, 0);
                 await this.writeDataCharacterisitc(serviceUUID, characteristicUUID, buffer);
                 resolve();
             }
@@ -371,11 +413,11 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    public writeInt8Characterisitc(serviceUUID:string, characteristicUUID:string, data:number):Promise<void> {
-        return new Promise<void>(async (resolve, reject)=>{
+    public writeInt8Characterisitc(serviceUUID: string, characteristicUUID: string, data: number): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
             try {
-                let buffer=new Buffer(1);
-                buffer.writeInt8(data,0);
+                let buffer = new Buffer(1);
+                buffer.writeInt8(data, 0);
                 await this.writeDataCharacterisitc(serviceUUID, characteristicUUID, buffer);
                 resolve();
             }
@@ -385,11 +427,11 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    public writeUInt16LECharacterisitc(serviceUUID:string, characteristicUUID:string, data:number):Promise<void> {
-        return new Promise<void>(async (resolve, reject)=>{
+    public writeUInt16LECharacterisitc(serviceUUID: string, characteristicUUID: string, data: number): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
             try {
-                let buffer=new Buffer(2);
-                buffer.writeUInt16LE(data,0);
+                let buffer = new Buffer(2);
+                buffer.writeUInt16LE(data, 0);
                 await this.writeDataCharacterisitc(serviceUUID, characteristicUUID, buffer);
                 resolve();
             }
@@ -399,11 +441,11 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    public writeUInt16BECharacterisitc(serviceUUID:string, characteristicUUID:string, data:number):Promise<void> {
-        return new Promise<void>(async (resolve, reject)=>{
+    public writeUInt16BECharacterisitc(serviceUUID: string, characteristicUUID: string, data: number): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
             try {
-                let buffer=new Buffer(2);
-                buffer.writeUInt16BE(data,0);
+                let buffer = new Buffer(2);
+                buffer.writeUInt16BE(data, 0);
                 await this.writeDataCharacterisitc(serviceUUID, characteristicUUID, buffer);
                 resolve();
             }
@@ -413,11 +455,11 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    public writeInt16LECharacterisitc(serviceUUID:string, characteristicUUID:string, data:number):Promise<void> {
-        return new Promise<void>(async (resolve, reject)=>{
+    public writeInt16LECharacterisitc(serviceUUID: string, characteristicUUID: string, data: number): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
             try {
-                let buffer=new Buffer(2);
-                buffer.writeInt16LE(data,0);
+                let buffer = new Buffer(2);
+                buffer.writeInt16LE(data, 0);
                 await this.writeDataCharacterisitc(serviceUUID, characteristicUUID, buffer);
                 resolve();
             }
@@ -427,11 +469,11 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    public writeInt16BECharacterisitc(serviceUUID:string, characteristicUUID:string, data:number):Promise<void> {
-        return new Promise<void>(async (resolve, reject)=>{
+    public writeInt16BECharacterisitc(serviceUUID: string, characteristicUUID: string, data: number): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
             try {
-                let buffer=new Buffer(2);
-                buffer.writeInt16BE(data,0);
+                let buffer = new Buffer(2);
+                buffer.writeInt16BE(data, 0);
                 await this.writeDataCharacterisitc(serviceUUID, characteristicUUID, buffer);
                 resolve();
             }
@@ -441,11 +483,11 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    public writeUInt32LECharacterisitc(serviceUUID:string, characteristicUUID:string, data:number):Promise<void> {
-        return new Promise<void>(async (resolve, reject)=>{
+    public writeUInt32LECharacterisitc(serviceUUID: string, characteristicUUID: string, data: number): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
             try {
-                let buffer=new Buffer(4);
-                buffer.writeUInt32LE(data,0);
+                let buffer = new Buffer(4);
+                buffer.writeUInt32LE(data, 0);
                 await this.writeDataCharacterisitc(serviceUUID, characteristicUUID, buffer);
                 resolve();
             }
@@ -455,11 +497,11 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    public writeUInt32BECharacterisitc(serviceUUID:string, characteristicUUID:string, data:number):Promise<void> {
-        return new Promise<void>(async (resolve, reject)=>{
+    public writeUInt32BECharacterisitc(serviceUUID: string, characteristicUUID: string, data: number): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
             try {
-                let buffer=new Buffer(4);
-                buffer.writeUInt32BE(data,0);
+                let buffer = new Buffer(4);
+                buffer.writeUInt32BE(data, 0);
                 await this.writeDataCharacterisitc(serviceUUID, characteristicUUID, buffer);
                 resolve();
             }
@@ -469,11 +511,11 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    public writeInt32LECharacterisitc(serviceUUID:string, characteristicUUID:string, data:number):Promise<void> {
-        return new Promise<void>(async (resolve, reject)=>{
+    public writeInt32LECharacterisitc(serviceUUID: string, characteristicUUID: string, data: number): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
             try {
-                let buffer=new Buffer(4);
-                buffer.writeInt32LE(data,0);
+                let buffer = new Buffer(4);
+                buffer.writeInt32LE(data, 0);
                 await this.writeDataCharacterisitc(serviceUUID, characteristicUUID, buffer);
                 resolve();
             }
@@ -483,11 +525,11 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    public writeInt32BECharacterisitc(serviceUUID:string, characteristicUUID:string, data:number):Promise<void> {
-        return new Promise<void>(async (resolve, reject)=>{
+    public writeInt32BECharacterisitc(serviceUUID: string, characteristicUUID: string, data: number): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
             try {
-                let buffer=new Buffer(4);
-                buffer.writeInt32BE(data,0);
+                let buffer = new Buffer(4);
+                buffer.writeInt32BE(data, 0);
                 await this.writeDataCharacterisitc(serviceUUID, characteristicUUID, buffer);
                 resolve();
             }
@@ -497,11 +539,11 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    public writeFloatLECharacterisitc(serviceUUID:string, characteristicUUID:string, data:number):Promise<void> {
-        return new Promise<void>(async (resolve, reject)=>{
+    public writeFloatLECharacterisitc(serviceUUID: string, characteristicUUID: string, data: number): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
             try {
-                let buffer=new Buffer(4);
-                buffer.writeFloatLE(data,0);
+                let buffer = new Buffer(4);
+                buffer.writeFloatLE(data, 0);
                 await this.writeDataCharacterisitc(serviceUUID, characteristicUUID, buffer);
                 resolve();
             }
@@ -511,11 +553,11 @@ export abstract class Base extends Events.EventEmitter {
         });
     }
 
-    public writeFloatBECharacterisitc(serviceUUID:string, characteristicUUID:string, data:number):Promise<void> {
-        return new Promise<void>(async (resolve, reject)=>{
+    public writeFloatBECharacterisitc(serviceUUID: string, characteristicUUID: string, data: number): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
             try {
-                let buffer=new Buffer(4);
-                buffer.writeFloatBE(data,0);
+                let buffer = new Buffer(4);
+                buffer.writeFloatBE(data, 0);
                 await this.writeDataCharacterisitc(serviceUUID, characteristicUUID, buffer);
                 resolve();
             }
@@ -526,15 +568,18 @@ export abstract class Base extends Events.EventEmitter {
     }
 
     /** Get device MAC address as hex string */
-    public getDeviceId():string {
-        if(!this.peripheral) return "";
+    public getDeviceId(): string {
+        if (!this.peripheral) return "";
         return this.peripheral.id;
     }
 
     /** Get device advertised local name */
-    public getDeviceName():string {
-        if(!this.peripheral) return "";
+    public getDeviceName(): string {
+        if (!this.peripheral) return "";
         return this.peripheral.advertisement.localName;
     }
 
+    public on(event: "connect" | "disconnect" | "connectAndSetupDone", listener: ((error: string) => void)) {
+        return super.on(event, listener);
+    }
 };
