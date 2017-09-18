@@ -1,18 +1,17 @@
 import * as Noble from 'noble';
 import * as NobleBase from "../index";
-import * as Process from 'process';
 
 class SimplePeripheral extends NobleBase.Base {
 
-    public readonly genericAccessService:NobleBase.GenericAccessService=new NobleBase.GenericAccessService(this);
+    public readonly genericAccessService: NobleBase.GenericAccessService = new NobleBase.GenericAccessService(this);
 
     protected async onConnectAndSetupDone() {
-           
+
         try {
-            
-            const deviceName=await this.genericAccessService.readDeviceName();
-            const apperance=await this.genericAccessService.readApperance();
-            console.log("Mac: "+this.getDeviceId()+" Name: "+deviceName+" apperance: "+NobleBase.GenericAccessService.Apperance[apperance]);
+
+            const deviceName = await this.genericAccessService.readDeviceName();
+            const apperance = await this.genericAccessService.readApperance();
+            console.log("Mac: " + this.getDeviceId() + " Name: " + deviceName + " apperance: " + NobleBase.GenericAccessService.Apperance[apperance]);
 
         } catch (error) {
             console.log(error);
@@ -21,15 +20,15 @@ class SimplePeripheral extends NobleBase.Base {
     }
 
     public is(peripheral: Noble.Peripheral): boolean {
-       return true;
+        return true;
     }
 }
 
 class Application {
-    public static main():void {
-        
-        let scanHelper=new NobleBase.ScanHelper<SimplePeripheral>(SimplePeripheral);  
-        scanHelper.discoverAll(); 
+    public static main(): void {
+
+        let scanHelper = new NobleBase.ScanHelper<SimplePeripheral>(SimplePeripheral);
+        scanHelper.discoverAll();
     }
 }
 
