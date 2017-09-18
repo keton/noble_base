@@ -25,6 +25,20 @@ Take a look at the `src/examples`. Basic pattern is as follows:
     ```typescript
     let scanHelper = new NobleBase.ScanHelper<ExamplePeripheral>(ExamplePeripheral);
     ```
+1. (optional) Apply scan filter
+    ```typescript
+    scanHelper.setScanFilter((peripheral) => {
+        //return true if peripheral should be connected
+    });
+    ```
+1. (optional) Attach device discovered callback
+    ```typescript
+        //called each time new SimplePeripheral is connected
+        const deviceDiscoveredCallback = (peripheral: ExamplePeripheral) => {
+            //do something with peripheral
+        }
+        scanHelper.on('discoveredDevice', deviceDiscoveredCallback);
+    ```
 1. Start scanning
     ```typescript
     scanHelper.discoverAll();
