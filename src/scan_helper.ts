@@ -59,7 +59,7 @@ export class ScanHelper<T extends NobleBase.Base> extends Events.EventEmitter {
         //start scan if requested
         if (state == "poweredOn" && this.shouldStartScan) {
             this.shouldStartScan = false;
-            this.scanStart(this.allowScanDuplicates);
+            Noble.startScanning([], this.allowScanDuplicates);
         }
     }
 
@@ -73,7 +73,7 @@ export class ScanHelper<T extends NobleBase.Base> extends Events.EventEmitter {
      * @param allowDuplicates allow duplicate scan results
      */
     public scanStart(allowDuplicates: boolean = true): void {
-        this.allowScanDuplicates=allowDuplicates;
+        this.allowScanDuplicates = allowDuplicates;
 
         //if BLE adapter is ready start scan
         if (Noble.state == "poweredOn") Noble.startScanning([], this.allowScanDuplicates);
@@ -127,5 +127,9 @@ export class ScanHelper<T extends NobleBase.Base> extends Events.EventEmitter {
     /** Remove scan filter */
     public removeScanFilter() {
         this.scanFilter = this.defaultScanFilter;
+    }
+
+    public on(event: 'discoveredDevice', listener: ((device: T) => void)) {
+        return super.on(event, listener);
     }
 }
