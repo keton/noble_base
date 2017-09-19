@@ -1,6 +1,6 @@
 {
   "name": "noble_base",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Typescript compatible Noble base class for manipulating BLE peripheral devices",
   "main": "lib/index.js",
   "types":"lib/index",
