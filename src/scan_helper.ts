@@ -35,7 +35,7 @@ export class ScanHelper<T extends NobleBase.Base> extends Events.EventEmitter {
         return new this.deviceType();
     }
 
-    private onDiscover(peripheral: Noble.Peripheral) {
+    private async onDiscover(peripheral: Noble.Peripheral) {
 
         //bail out if device discovery is disabled
         if (!this.shouldDiscoverDevices || !this.scanFilter(peripheral)) return;
@@ -49,9 +49,20 @@ export class ScanHelper<T extends NobleBase.Base> extends Events.EventEmitter {
         if (device.is(peripheral)) {
 
             device.attachPeripheral(peripheral);
-            if (this.autoConnectAndSetup) device.connectAndSetup();
 
-            this.emit('discoveredDevice', device);
+            if (this.autoConnectAndSetup) {
+                try {
+                    //execute connectAndSetup() for the device before emiting 'discoveredDevice' event
+                    await device.connectAndSetup();
+                    this.emit('discoveredDevice', device);
+                } catch (error) {
+                    console.log("error");
+                }
+            } 
+            else {
+                //just emit 'discoveredDevice' event
+                this.emit('discoveredDevice', device);
+            }
         }
     }
 

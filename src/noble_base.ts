@@ -106,9 +106,13 @@ export abstract class Base extends Events.EventEmitter {
             let services = await this.discoverServicesAndCharacteristics();
             this.parseServices(services);
             this.emit('connectAndSetupDone');
+
+            return Promise.resolve();
         }
         catch (error) {
             console.log("connectAndSetup error:%s", error);
+            
+            return Promise.reject(error);
         }
     }
 
