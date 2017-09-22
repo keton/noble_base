@@ -1,6 +1,6 @@
 {
   "name": "noble_base",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Typescript compatible Noble base class for manipulating BLE peripheral devices",
   "main": "lib/index.js",
   "types":"lib/index",
@@ -16,7 +16,7 @@
     "BLE",
     "typescript"
   ],
-  "author": "Michal Lower",
+  "author": "Michal Lower (https://github.com/keton)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/keton/noble_base/issues"
@@ -26,7 +26,8 @@
     "noble": "^1.8.1"
   },
   "devDependencies": {
-    "@types/noble": "0.0.33",
+    "@types/noble": ">=0.0.34",
     "@types/node": "^8.0.28"
-  }
+  },
+  "engines" : { "node" : ">=6.11.0" }
 }
