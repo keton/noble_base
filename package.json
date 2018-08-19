@@ -1,9 +1,9 @@
 {
   "name": "noble_base",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Typescript compatible Noble base class for manipulating BLE peripheral devices",
   "main": "lib/index.js",
-  "types":"lib/index",
+  "types": "lib/index",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -22,12 +22,14 @@
     "url": "https://github.com/keton/noble_base/issues"
   },
   "homepage": "https://github.com/keton/noble_base#readme",
-  "dependencies": {
-    "noble": "^1.8.1"
-  },
   "devDependencies": {
-    "@types/noble": ">=0.0.34",
-    "@types/node": "^8.0.28"
+    "@types/noble": "0.0.37",
+    "@types/node": "^8.10.26"
   },
-  "engines" : { "node" : ">=6.11.0" }
+  "engines": {
+    "node": ">=8.11.0"
+  },
+  "dependencies": {
+    "noble": "^1.9.1"
+  }
 }
